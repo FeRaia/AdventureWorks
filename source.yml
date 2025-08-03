@@ -1,0 +1,279 @@
+version: 2
+
+sources:
+  - name: STAGE
+    database: NOVADRIVE
+    schema: STAGE
+    tables:
+      - name: address
+        description: Tabela de endereços
+        tests:
+          - dbt_expectations.expect_table_row_count_to_be_between: {min_value: 1}
+        columns:
+          - name: AddressID
+            description: Chave primária da tabela Address
+            tests:
+              - unique
+              - not_null
+          - name: City
+            description: Cidade
+            tests:
+              - not_null
+
+      - name: stateprovince
+        description: Tabela com estados e códigos regionais
+        tests:
+          - dbt_expectations.expect_table_row_count_to_be_between: {min_value: 1}
+        columns:
+          - name: StateProvinceID
+            tests:
+              - unique
+              - not_null
+
+      - name: countryregion
+        description: Países e regiões
+        columns:
+          - name: CountryRegionCode
+            tests:
+              - unique
+              - not_null
+
+      - name: SalesReason
+        description: Motivos de venda
+        columns:
+          - name: SalesReasonID
+            tests:
+              - unique
+              - not_null
+          - name: Name
+            tests:
+              - not_null
+
+      - name: SalesOrderHeader
+        description: Fato principal de pedidos de venda
+        columns:
+          - name: SalesOrderID
+            tests:
+              - unique
+              - not_null
+          - name: OrderDate
+            tests:
+              - not_null
+
+      - name: SalesOrderDetail
+        description: Detalhes dos pedidos de venda
+        columns:
+          - name: SalesOrderDetailID
+            tests:
+              - unique
+              - not_null
+          - name: SalesOrderID
+            tests:
+              - not_null
+
+      - name: SalesOrderHeaderSalesReason
+        description: Tabela ponte entre pedidos e motivos de venda
+        columns:
+          - name: SalesOrderID
+            tests:
+              - not_null
+          - name: SalesReasonID
+            tests:
+              - not_null
+
+      - name: Customer
+        description: Tabela de clientes
+        columns:
+          - name: CustomerID
+            tests:
+              - unique
+              - not_null
+
+      - name: Person
+        description: Informações de pessoas
+        columns:
+          - name: BusinessEntityID
+            tests:
+              - unique
+              - not_null
+          - name: FirstName
+            tests:
+              - not_null
+
+      - name: Product
+        description: Dimensão de produtos
+        columns:
+          - name: ProductID
+            tests:
+              - unique
+              - not_null
+          - name: Name
+            tests:
+              - not_null
+
+      - name: CreditCard
+        description: Tipos de cartão de crédito utilizados
+        columns:
+          - name: CreditCardID
+            tests:
+              - unique
+              - not_null
+          - name: CardType
+            tests:
+              - not_null
+
+      - name: specialoffer
+        description: "Staging dos motivos de venda (Special Offers)"
+        columns: 
+          - name: SpecialOfferID
+            description: "Identificador único da promoção"
+            tests:
+            - not_null
+            - unique
+
+      - name: BusinessEntityAddress
+        description: Mapeia o relacionamento entre uma entidade (como uma pessoa ou organização) e um endereço. Tabela ponte entre entidades e endereços.
+        columns:
+          - name: BusinessEntityID
+            description: Identificador único da entidade (pessoa ou organização).
+            tests:
+              - not_null
+              - relationships:
+                  to: source('STAGE', 'Person')  # ou 'BusinessEntity' se for o nome da tabela correta
+                  field: BusinessEntityID
+
+      - name: stg_businessentityaddress
+        description: Tabela staging da relação entre entidade de negócio e endereço.
+        columns:
+          - name: business_entity_id
+            description: Identificador da entidade de negócio (cliente, fornecedor, etc.)
+            tests:
+              - not_null
+          - name: address_id
+            description: Identificador do endereço.
+            tests:
+              - not_null
+          - name: address_type_id
+            description: Tipo do endereço associado à entidade.
+          - name: rowguid
+            description: GUID da linha.
+          - name: modified_date
+            description: Data da última modificação do registro.
+
+      - name: dim_businessentityaddress
+        description: Dimensão simplificada com as chaves da relação entre entidade e endereço.
+        columns:
+          - name: business_entity_id
+            description: Identificador da entidade de negócio.
+            tests:
+              - not_null
+          - name: address_id
+            description: Identificador do endereço.
+            tests:
+              - not_null
+          - name: address_type_id
+            description: Tipo de endereço.
+      
+      - name: stg_pessoa_prod
+        description: Stage da tabela Person com dados básicos de pessoas físicas e jurídicas.
+        columns:
+        - name: BusinessEntityID
+          description: Chave primária da pessoa.
+          tests:
+            - unique
+            - not_null
+        - name: FirstName
+          description: Primeiro nome da pessoa.
+        - name: LastName
+          description: Sobrenome da pessoa.
+
+      - name: dim_pessoa_prod
+        description: Dimensão de pessoas com dados tratados.
+        columns:
+          - name: person_id
+            description: Identificador único da pessoa.
+            tests:
+              - unique
+              - not_null
+          - name: FirstName
+            description: Primeiro nome.
+          - name: LastName
+            description: Último nome.
+
+      - name: stg_endereco_prod
+        description: Stage da tabela Address com endereços dos clientes e entidades.
+        columns:
+          - name: AddressID
+            description: Chave primária da tabela Address.
+            tests:
+              - unique
+              - not_null
+          - name: City
+            description: Cidade.
+            tests:
+              - not_null
+
+      - name: dim_endereco_prod
+        description: Dimensão de endereços tratados.
+        columns:
+          - name: endereco_id
+            description: Identificador único do endereço.
+            tests:
+              - unique
+              - not_null
+          - name: City
+            description: Cidade.
+            tests:
+              - not_null
+
+      - name: stg_estado_prod
+        description: Stage da tabela StateProvince com os estados ou províncias.
+        columns:
+          - name: StateProvinceID
+            description: Chave primária do estado.
+            tests:
+              - unique
+              - not_null
+          - name: state_name
+            description: Nome do estado ou província.
+            tests:
+              - not_null
+
+      - name: dim_estado_prod
+        description: Dimensão de estados com informações detalhadas.
+        columns:
+          - name: estado_id
+            description: Identificador único do estado.
+            tests:
+              - unique
+              - not_null
+          - name: state_name
+            description: Nome do estado.
+            tests:
+              - not_null
+
+      - name: stg_pais_prod
+        description: Stage da tabela CountryRegion com os países.
+        columns:
+          - name: CountryRegionCode
+            description: Código do país.
+            tests:
+              - unique
+              - not_null
+          - name: country_name
+            description: Nome do país.
+            tests:
+              - not_null
+
+      - name: dim_pais_prod
+        description: Dimensão de países com códigos e nomes tratados.
+        columns:
+          - name: pais_codigo
+            description: Código do país.
+            tests:
+              - unique
+              - not_null
+          - name: pais
+            description: Nome do país.
+            tests:
+              - not_null
